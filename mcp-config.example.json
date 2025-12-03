@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "sequential-thinking": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "cwd": "c:/dev/devpattern sequential",
+      "env": {
+        "DATA_PATH": "./data",
+        "DISABLE_THOUGHT_LOGGING": "false"
+      },
+      "disabled": false,
+      "alwaysAllow": [
+        "sequentialthinking",
+        "get_thinking_context",
+        "list_thinking_sessions"
+      ]
+    }
+  }
+}
+
