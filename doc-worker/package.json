@@ -1,0 +1,37 @@
+{
+  "name": "devpattern-doc-worker",
+  "version": "0.1.0",
+  "description": "DevPattern Documentation Worker - Async documentation generation with LLM summarization",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.0",
+    "ioredis": "^5.4.1",
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.19.1",
+    "typescript": "^5.3.3",
+    "vitest": "^2.1.9"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "devpattern",
+    "documentation",
+    "worker",
+    "llm",
+    "anthropic"
+  ],
+  "license": "MIT"
+}
+

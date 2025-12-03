@@ -1,4 +1,19 @@
 services:
+  # Redis for event pub/sub between DevPattern and Doc Worker
+  redis:
+    image: redis:7-alpine
+    container_name: devpattern-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   # HTTP mode - for cloud/multi-tenant deployment with Cloudflare Tunnel
   devpattern:
     image: ghcr.io/agiprolabs/devpattern:latest
@@ -10,12 +25,47 @@ services:
       - TRANSPORT_MODE=http
       - PORT=3001
       - HOST=0.0.0.0
+      - REDIS_URL=redis://redis:6379
     ports:
       - "3001:3001"
     volumes:
       - ./data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Documentation Worker - async documentation generation
+  devpattern-doc-worker:
+    image: ghcr.io/agiprolabs/devpattern-doc-worker:latest
+    container_name: devpattern-doc-worker
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATA_PATH=/data
+      - REDIS_URL=redis://redis:6379
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - BASIC_MODEL=claude-3-5-haiku-20241022
+      - PREMIUM_MODEL=claude-3-5-sonnet-20241022
+      - IDLE_TIMEOUT_MINUTES=10
+      - BATCH_SIZE=5
+      - BATCH_WINDOW_SECONDS=30
+      - MAX_RETRIES=3
+      - HEALTH_PORT=3002
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3002/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -38,7 +88,7 @@ services:
     stdin_open: true      # Required for MCP STDIO transport
     tty: true
 
-  # Development mode - build from source
+  # Development mode - build DevPattern from source
   devpattern-dev:
     build:
       context: .
@@ -51,7 +101,39 @@ services:
       - DATA_PATH=/data
       - TRANSPORT_MODE=http
       - PORT=3001
+      - REDIS_URL=redis://redis:6379
     ports:
       - "3001:3001"
     volumes:
       - ./data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # Development mode - build Doc Worker from source
+  devpattern-doc-worker-dev:
+    build:
+      context: ./doc-worker
+      dockerfile: Dockerfile
+    container_name: devpattern-doc-worker-dev
+    profiles:
+      - dev
+    environment:
+      - NODE_ENV=development
+      - DATA_PATH=/data
+      - REDIS_URL=redis://redis:6379
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - BASIC_MODEL=claude-3-5-haiku-20241022
+      - PREMIUM_MODEL=claude-3-5-sonnet-20241022
+      - IDLE_TIMEOUT_MINUTES=10
+      - HEALTH_PORT=3002
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  redis-data:
