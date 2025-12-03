@@ -1,8 +1,6 @@
 services:
   sequential-thinking:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/agiprolabs/sequential-thinking-extended:latest
     container_name: sequential-thinking-extended
     restart: unless-stopped
     environment:
@@ -10,11 +8,21 @@ services:
       - DATA_PATH=/data
       - DISABLE_THOUGHT_LOGGING=false
     volumes:
-      - thinking-data:/data
+      - ./data:/data
     stdin_open: true      # Required for MCP STDIO transport
     tty: true
 
-volumes:
-  thinking-data:
-    driver: local
+  # Alternative: build from source
+  # sequential-thinking-dev:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: sequential-thinking-dev
+  #   environment:
+  #     - NODE_ENV=development
+  #     - DATA_PATH=/data
+  #   volumes:
+  #     - ./data:/data
+  #   stdin_open: true
+  #   tty: true
 
